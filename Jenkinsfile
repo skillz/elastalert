@@ -7,21 +7,6 @@ switch(env.BRANCH_NAME) {
   break
 }
 
-def testPipeline() {
-  slaveTemplates.docker {
-    slaveTemplates.github {
-      node(POD_LABEL) {
-        def scmVars = checkout(scm)
-        container('python') {
-          sh """
-            python setup.py bdist_wheel
-          """
-        }
-      }
-    }
-  }
-}
-
 def python(Map args=[:], Closure body) {
   def tag = args.get('tag', '3.6-alpine')
   def overrides = args.get('overrides', [:])
@@ -40,6 +25,22 @@ def python(Map args=[:], Closure body) {
     body.call()
   }
 }
+
+def testPipeline() {
+  slaveTemplates.docker {
+    slaveTemplates.github {
+      python() {
+        node(POD_LABEL) {
+          def scmVars = checkout(scm)
+          sh """
+            python setup.py bdist_wheel
+          """
+        }
+      }
+    }
+  }
+}
+
 
 def deploymentPipeline(List repos) {
   slaveTemplates.docker {
