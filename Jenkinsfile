@@ -29,9 +29,9 @@ def python(Map args=[:], Closure body) {
 def testPipeline() {
   slaveTemplates.docker {
     slaveTemplates.github {
-      node(POD_LABEL) {
-        def scmVars = checkout(scm)
-        python() {
+      python () {
+        node(POD_LABEL) {
+          def scmVars = checkout(scm)
           container('python') {
             sh """
               python setup.py bdist_wheel
