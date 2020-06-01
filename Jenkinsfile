@@ -8,10 +8,17 @@ switch(env.BRANCH_NAME) {
 }
 
 def testPipeline() {
-  container('python') {
-    sh """
-      python setup.py bdist_wheel
-    """
+  slaveTemplates.docker {
+    slaveTemplates.github {
+      node(POD_LABEL) {
+        def scmVars = checkout(scm)
+        container('python') {
+          sh """
+            python setup.py bdist_wheel
+          """
+        }
+      }
+    }
   }
 }
 
@@ -35,31 +42,29 @@ def python(Map args=[:], Closure body) {
 }
 
 def deploymentPipeline(List repos) {
-  baseTemplate(env.DB_NAME) { mysql ->
-    slaveTemplates.docker {
-      slaveTemplates.github {
-        node(POD_LABEL) {
-          def scmVars = checkout(scm)
-          container('python') {
-            sh """
-              python setup.py bdist_wheel
-            """
-          }
-          def imageTag = scmVars.GIT_COMMIT
-          container('docker') {
-            dockerBuildPush(tag: imageTag, dockerBuildArgs: ["--skip-tls-verify-pull"])
-          }
-          container('github') {
-            def prBranch   = "${repoName()}@${scmVars.GIT_BRANCH}"
-            def modifyFile = "apps/${repoName()}/release.yaml"
-            createPR(
-              branch: prBranch,
-              repos: repos,
-              modifyYaml: [
-                file: modifyFile,
-                key: "imageTag",
-                desiredValue: imageTag])
-          }
+  slaveTemplates.docker {
+    slaveTemplates.github {
+      node(POD_LABEL) {
+        def scmVars = checkout(scm)
+        container('python') {
+          sh """
+            python setup.py bdist_wheel
+          """
+        }
+        def imageTag = scmVars.GIT_COMMIT
+        container('docker') {
+          dockerBuildPush(tag: imageTag, dockerBuildArgs: ["--skip-tls-verify-pull"])
+        }
+        container('github') {
+          def prBranch   = "${repoName()}@${scmVars.GIT_BRANCH}"
+          def modifyFile = "apps/${repoName()}/release.yaml"
+          createPR(
+            branch: prBranch,
+            repos: repos,
+            modifyYaml: [
+              file: modifyFile,
+              key: "imageTag",
+              desiredValue: imageTag])
         }
       }
     }
