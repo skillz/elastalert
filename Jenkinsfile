@@ -1,7 +1,7 @@
 @Library('gitops-pipeline-library@V2') _
 
 switch(env.BRANCH_NAME) {
-  case ~/PR-[0-9]+/: deploymentPipeline()
+  case ~/PR-[0-9]+/: deploymentPipeline(["gitops-qa"])
   break
   case 'master': deploymentPipeline(["gitops-qa"])
   break
