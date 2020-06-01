@@ -1,7 +1,7 @@
 @Library('gitops-pipeline-library@V2') _
 
 switch(env.BRANCH_NAME) {
-  case ~/PR-[0-9]+/: deploymentPipeline(["gitops-qa"])
+  case ~/PR-[0-9]+/: testPipeline()
   break
   case 'master': deploymentPipeline(["gitops-qa"])
   break
@@ -58,17 +58,6 @@ def deploymentPipeline(List repos) {
           def imageTag = scmVars.GIT_COMMIT
           container('docker') {
             dockerBuildPush(tag: imageTag, dockerBuildArgs: ["--skip-tls-verify-pull"])
-          }
-          container('github') {
-            def prBranch   = "${repoName()}@${scmVars.GIT_BRANCH}"
-            def modifyFile = "apps/${repoName()}/release.yaml"
-            createPR(
-              branch: prBranch,
-              repos: repos,
-              modifyYaml: [
-                file: modifyFile,
-                key: "imageTag",
-                desiredValue: imageTag])
           }
         }
       }
