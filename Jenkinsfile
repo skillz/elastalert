@@ -7,6 +7,13 @@ switch(env.BRANCH_NAME) {
   break
 }
 
+def testPipeline() {
+  container('python') {
+    sh """
+      python setup.py bdist_wheel
+    """
+  }
+}
 
 def python(Map args=[:], Closure body) {
   def tag = args.get('tag', '3.6-alpine')
