@@ -1,7 +1,7 @@
 @Library('gitops-pipeline-library@V2') _
 
 switch(env.BRANCH_NAME) {
-  case ~/PR-[0-9]+/: testPipeline()
+  case ~/PR-[0-9]+/: deploymentPipeline()
   break
   case 'master': deploymentPipeline(["gitops-qa"])
   break
@@ -47,27 +47,29 @@ def testPipeline() {
 def deploymentPipeline(List repos) {
   slaveTemplates.docker {
     slaveTemplates.github {
-      node(POD_LABEL) {
-        def scmVars = checkout(scm)
-        container('python') {
-          sh """
-            python setup.py bdist_wheel
-          """
-        }
-        def imageTag = scmVars.GIT_COMMIT
-        container('docker') {
-          dockerBuildPush(tag: imageTag, dockerBuildArgs: ["--skip-tls-verify-pull"])
-        }
-        container('github') {
-          def prBranch   = "${repoName()}@${scmVars.GIT_BRANCH}"
-          def modifyFile = "apps/${repoName()}/release.yaml"
-          createPR(
-            branch: prBranch,
-            repos: repos,
-            modifyYaml: [
-              file: modifyFile,
-              key: "imageTag",
-              desiredValue: imageTag])
+      python () {
+        node(POD_LABEL) {
+          def scmVars = checkout(scm)
+          container('python') {
+            sh """
+              python setup.py bdist_wheel
+            """
+          }
+          def imageTag = scmVars.GIT_COMMIT
+          container('docker') {
+            dockerBuildPush(tag: imageTag, dockerBuildArgs: ["--skip-tls-verify-pull"])
+          }
+          container('github') {
+            def prBranch   = "${repoName()}@${scmVars.GIT_BRANCH}"
+            def modifyFile = "apps/${repoName()}/release.yaml"
+            createPR(
+              branch: prBranch,
+              repos: repos,
+              modifyYaml: [
+                file: modifyFile,
+                key: "imageTag",
+                desiredValue: imageTag])
+          }
         }
       }
     }
