@@ -32,9 +32,11 @@ def testPipeline() {
       node(POD_LABEL) {
         def scmVars = checkout(scm)
         python() {
-          sh """
-            python setup.py bdist_wheel
-          """
+          container('python') {
+            sh """
+              python setup.py bdist_wheel
+            """
+          }
         }
       }
     }
