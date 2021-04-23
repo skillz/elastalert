@@ -10,7 +10,7 @@ on:
     paths:
     - "docker/**"
     branches:
-    - main
+    - master
 
 jobs:
   docker:
